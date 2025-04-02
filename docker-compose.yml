@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v2.10
+    ports:
+      - "80:80"
+      - "8080:8080"  # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml
+    labels:
+      - "traefik.enable=true"
+      # Configuración del dashboard (solo accesible desde localhost)
+      - "traefik.http.routers.traefik.rule=Host(`localhost`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.entrypoints=web"
+
+  api-registro:
+    build: ./api-registro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=PathPrefix(`/registro`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.routers.api.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/users.htpasswd"
+      - "traefik.http.services.api.loadbalancer.server.port=3000"  # Ajusta según tu servicio
+
+  cliente-app1:
+    build: ./cliente-app
+    environment:
+      - SERVICE_ID=app1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cliente-app1.rule=PathPrefix(`/cliente/app1`)"
+      - "traefik.http.routers.cliente-app1.entrypoints=web"
+      - "traefik.http.routers.cliente-app1.middlewares=strip-app1"
+      - "traefik.http.middlewares.strip-app1.stripprefix.prefixes=/cliente/app1"
+      - "traefik.http.services.cliente-app1.loadbalancer.server.port=4000"  # Ajusta según tu servicio
+
+  cliente-app2:
+    build: ./cliente-app
+    environment:
+      - SERVICE_ID=app2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cliente-app2.rule=PathPrefix(`/cliente/app2`)"
+      - "traefik.http.routers.cliente-app2.entrypoints=web"
+      - "traefik.http.routers.cliente-app2.middlewares=strip-app2"
+      - "traefik.http.middlewares.strip-app2.stripprefix.prefixes=/cliente/app2"
+      - "traefik.http.services.cliente-app2.loadbalancer.server.port=4000"
+
+  cliente-app3:
+    build: ./cliente-app
+    environment:
+      - SERVICE_ID=app3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cliente-app3.rule=PathPrefix(`/cliente/app3`)"
+      - "traefik.http.routers.cliente-app3.entrypoints=web"
+      - "traefik.http.routers.cliente-app3.middlewares=strip-app3"
+      - "traefik.http.middlewares.strip-app3.stripprefix.prefixes=/cliente/app3"
+      - "traefik.http.services.cliente-app3.loadbalancer.server.port=4000"
+
+  monitor:
+    build: ./monitor
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monitor.rule=PathPrefix(`/monitor`)"
+      - "traefik.http.routers.monitor.entrypoints=web"
+      - "traefik.http.services.monitor.loadbalancer.server.port=5000"  # Ajusta según tu servicio
