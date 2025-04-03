@@ -1,6 +1,6 @@
 api:
   dashboard: true
-  insecure: true  # Solo para desarrollo local
+  insecure: true
 
 entryPoints:
   web:
@@ -9,3 +9,11 @@ entryPoints:
 providers:
   docker:
     exposedByDefault: false
+    network: "traefik-net"
+    watch: true
+    swarmModeRefreshSeconds: "15s"
+
+log:
+  level: DEBUG
+
+accessLog: true
